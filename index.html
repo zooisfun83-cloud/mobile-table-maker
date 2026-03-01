@@ -281,8 +281,8 @@
 
             const deleteRow = (idx) => {
                 if (tableState.rows.length <= 1) return;
-                const filteredRows = tableState.rows.filter((_, i) => i !== idx)
-                                                .map((r, i) => { r[0] = String(i + 1); return r; });
+                // 사용자가 입력한 내용을 보존하기 위해 자동 인덱싱(번호 매기기) 로직 제거
+                const filteredRows = tableState.rows.filter((_, i) => i !== idx);
                 setTableState(prev => ({ ...prev, rows: filteredRows }));
             };
 
@@ -424,8 +424,13 @@
                                                     {tableState.rows.map((row, rIdx) => (
                                                         <tr key={`r-${rIdx}`}>
                                                             <td className="sidebar-index">
-                                                                <div className="flex flex-col items-center justify-center gap-1 py-4">
-                                                                    <span className="text-sm text-slate-500 font-bold">{row[0]}</span>
+                                                                <div className="flex flex-col items-center justify-center gap-1 py-2 h-full">
+                                                                    {/* 행 번호(인덱스)도 직접 수정 가능하도록 변경 */}
+                                                                    <AutoTextarea 
+                                                                        className="cell-input text-sm text-slate-500 font-bold !bg-transparent !p-1"
+                                                                        value={row[0]} 
+                                                                        onChange={(e) => handleCellChange(rIdx, 0, e.target.value)}
+                                                                    />
                                                                     {!isExporting && (
                                                                         <button 
                                                                             onClick={() => deleteRow(rIdx)}
@@ -439,7 +444,6 @@
                                                             {row.map((cell, cIdx) => (
                                                                 cIdx !== 0 && (
                                                                     <td key={`c-${rIdx}-${cIdx}`}>
-                                                                        {/* 기존 input을 AutoTextarea로 변경 */}
                                                                         <AutoTextarea 
                                                                             className="cell-input"
                                                                             value={cell} 
