@@ -32,7 +32,6 @@
             font-family: 'Gaegu', cursive;
         }
 
-        /* 아티팩트 컨테이너 디자인 */
         .premium-card {
             background: #ffffff;
             border-radius: 1.5rem;
@@ -40,7 +39,6 @@
             border: 1px solid #e2e8f0;
         }
 
-        /* 데이터 그리드 아키텍처 */
         .data-grid {
             border-collapse: separate;
             border-spacing: 0;
@@ -48,15 +46,15 @@
             min-width: 100%;
             background: white;
             border: 1.5px solid #334155;
-            table-layout: fixed; /* 너비 고정을 위해 필수 */
+            table-layout: fixed;
         }
         
         .data-grid th, .data-grid td {
             border: 1px solid #e2e8f0;
             padding: 0;
-            min-height: 56px; /* 고정 높이 대신 최소 높이 적용 */
             position: relative;
-            vertical-align: middle;
+            vertical-align: middle; /* 텍스트 수직 중앙 정렬 */
+            height: 56px;
         }
 
         .data-grid th {
@@ -65,22 +63,21 @@
             color: #334155;
         }
 
-        /* 입력 영역 스타일 수정 (여러 줄 지원) */
+        /* 캡처 렌더링 오류 해결을 위해 일반 div 블록으로 구조 변경 */
         .cell-input {
             width: 100%;
-            height: 100%;
+            min-height: 100%;
+            display: block;
             background: transparent;
             outline: none;
-            padding: 16px 12px; /* 상하 여백 주어 중앙 정렬 효과 */
+            padding: 16px 12px;
             font-size: 15px;
             text-align: center;
             border: none;
             color: #1e293b;
-            resize: none; /* 사용자 임의 크기조절 방지 */
-            overflow: hidden; /* 스크롤바 숨김 */
-            display: block;
-            word-break: keep-all; /* 단어 단위로 줄바꿈 */
+            word-break: keep-all;
             overflow-wrap: break-word;
+            white-space: pre-wrap; /* 줄바꿈 허용 */
             box-sizing: border-box;
             line-height: 1.5;
         }
@@ -97,10 +94,8 @@
             min-width: 70px !important;
             font-weight: 800;
             color: #475569;
-            vertical-align: top;
         }
 
-        /* 뷰포트 스크롤 최적화 */
         .viewport-container {
             overflow-x: auto;
             -webkit-overflow-scrolling: touch;
@@ -109,7 +104,6 @@
             margin-bottom: 1rem;
         }
 
-        /* 액션 컨트롤 버튼 */
         .action-button {
             display: flex;
             align-items: center;
@@ -128,7 +122,6 @@
             border-color: #fecaca;
         }
 
-        /* 리사이저 핸들 */
         .column-resizer {
             position: absolute;
             right: 0;
@@ -143,7 +136,6 @@
             background: rgba(79, 70, 229, 0.3);
         }
 
-        /* 캡처 시 숨김 처리 */
         .export-hidden {
             display: none !important;
         }
@@ -181,24 +173,29 @@
         const Download = () => <LucideIcon><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></LucideIcon>;
         const Trash = ({ size = 16 }) => <LucideIcon size={size}><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></LucideIcon>;
 
-        // 입력 텍스트 길이에 맞춰 자동으로 높이가 조절되는 Textarea 컴포넌트 추가
-        const AutoTextarea = ({ value, onChange, className }) => {
-            const textareaRef = useRef(null);
+        // 캡처 버그 회피용 커스텀 입력 컴포넌트 (일반 div 기반)
+        const EditableCell = ({ value, onChange, className }) => {
+            const divRef = useRef(null);
 
             useEffect(() => {
-                if (textareaRef.current) {
-                    textareaRef.current.style.height = 'auto';
-                    textareaRef.current.style.height = textareaRef.current.scrollHeight + 'px';
+                if (divRef.current && divRef.current.innerText !== value) {
+                    divRef.current.innerText = value;
                 }
             }, [value]);
 
+            const handleBlur = (e) => {
+                if (onChange) {
+                    onChange(e.currentTarget.innerText);
+                }
+            };
+
             return (
-                <textarea
-                    ref={textareaRef}
+                <div
+                    ref={divRef}
                     className={className}
-                    value={value}
-                    onChange={onChange}
-                    rows={1}
+                    contentEditable={true}
+                    suppressContentEditableWarning={true}
+                    onBlur={handleBlur}
                 />
             );
         };
@@ -245,7 +242,7 @@
             const executeExport = async () => {
                 if (!captureAreaRef.current) return;
                 setIsExporting(true);
-                // 상태 변경 반영을 위한 지연 실행
+                
                 setTimeout(async () => {
                     try {
                         const canvas = await html2canvas(captureAreaRef.current, {
@@ -281,7 +278,6 @@
 
             const deleteRow = (idx) => {
                 if (tableState.rows.length <= 1) return;
-                // 사용자가 입력한 내용을 보존하기 위해 자동 인덱싱(번호 매기기) 로직 제거
                 const filteredRows = tableState.rows.filter((_, i) => i !== idx);
                 setTableState(prev => ({ ...prev, rows: filteredRows }));
             };
@@ -360,7 +356,6 @@
                                                     ))}
                                                 </colgroup>
                                                 <thead>
-                                                    {/* 관리 행 (저장 시 숨김) */}
                                                     <tr className={isExporting ? "export-hidden" : ""}>
                                                         <th className="sidebar-index"></th>
                                                         {tableState.headers.map((_, i) => (
@@ -378,25 +373,22 @@
                                                             )
                                                         ))}
                                                     </tr>
-                                                    {/* 헤더 행 */}
                                                     <tr>
                                                         <th className="sidebar-index p-0">
-                                                            {/* ID 컬럼도 수정 가능하도록 AutoTextarea 적용 */}
-                                                            <AutoTextarea 
+                                                            <EditableCell 
                                                                 className="cell-input font-bold uppercase tracking-wide !bg-transparent"
                                                                 value={tableState.headers[0]}
-                                                                onChange={(e) => handleHeaderChange(0, e.target.value)}
+                                                                onChange={(val) => handleHeaderChange(0, val)}
                                                             />
                                                         </th>
                                                         {tableState.headers.map((h, i) => (
                                                             i !== 0 && (
                                                                 <th key={`h-${i}`}>
-                                                                    <AutoTextarea 
+                                                                    <EditableCell 
                                                                         className="cell-input font-bold uppercase tracking-wide"
                                                                         value={h}
-                                                                        onChange={(e) => handleHeaderChange(i, e.target.value)}
+                                                                        onChange={(val) => handleHeaderChange(i, val)}
                                                                     />
-                                                                    {/* 너비 조절 핸들 */}
                                                                     {!isExporting && (
                                                                         <div 
                                                                             className="column-resizer"
@@ -424,12 +416,11 @@
                                                     {tableState.rows.map((row, rIdx) => (
                                                         <tr key={`r-${rIdx}`}>
                                                             <td className="sidebar-index">
-                                                                <div className="flex flex-col items-center justify-center gap-1 py-2 h-full">
-                                                                    {/* 행 번호(인덱스)도 직접 수정 가능하도록 변경 */}
-                                                                    <AutoTextarea 
+                                                                <div className="flex flex-col items-center justify-center gap-1 h-full w-full py-2">
+                                                                    <EditableCell 
                                                                         className="cell-input text-sm text-slate-500 font-bold !bg-transparent !p-1"
                                                                         value={row[0]} 
-                                                                        onChange={(e) => handleCellChange(rIdx, 0, e.target.value)}
+                                                                        onChange={(val) => handleCellChange(rIdx, 0, val)}
                                                                     />
                                                                     {!isExporting && (
                                                                         <button 
@@ -444,10 +435,10 @@
                                                             {row.map((cell, cIdx) => (
                                                                 cIdx !== 0 && (
                                                                     <td key={`c-${rIdx}-${cIdx}`}>
-                                                                        <AutoTextarea 
+                                                                        <EditableCell 
                                                                             className="cell-input"
                                                                             value={cell} 
-                                                                            onChange={(e) => handleCellChange(rIdx, cIdx, e.target.value)}
+                                                                            onChange={(val) => handleCellChange(rIdx, cIdx, val)}
                                                                         />
                                                                     </td>
                                                                 )
@@ -489,8 +480,8 @@
                     </main>
                     
                     <footer className="mt-10 mb-12 text-slate-600 font-extrabold flex items-center justify-center text-xl tracking-tighter">
-                        <span className="opacity-80">2026/1/3</span>
-                        <div className="birth-badge">탄생</div>
+                        <span className="opacity-80">2026/3/2</span>
+                        <div className="birth-badge">완벽</div>
                     </footer>
                 </div>
             );
